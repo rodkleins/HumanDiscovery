@@ -1,7 +1,7 @@
 // Tempo, datas e formatação, compartilhados pelas duas páginas. Depende de data.js.
 const NOW=2026,C=100,Y0=-10000,Y1=2026,Z0=1700,GAP=24;
-// Escala logarítmica dos anos até hoje: prog(y) vai de 0 em 10 mil a.C. a 1 em 2025.
-const u=y=>Math.log(NOW-y+C),U0=u(Y0),U1=u(2025);
+// Escala logarítmica dos anos até hoje: prog(y) vai de 0 em 10 mil a.C. a 1 em NOW (2026).
+const u=y=>Math.log(NOW-y+C),U0=u(Y0),U1=u(NOW);
 const prog=y=>(U0-u(y))/(U0-U1);
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,k)=>a+(b-a)*k;
 function rnd(seed){let s=seed*9301+49297;return()=>((s=(s*9301+49297)%233280)/233280);}

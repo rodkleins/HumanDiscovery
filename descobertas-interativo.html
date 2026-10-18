@@ -46,6 +46,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visib
 .media .ph{position:relative;height:240px;background:#0A0D16}
 .media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s}
 .media img.on{opacity:1}
+.media img.tall{object-fit:contain}
 .media[hidden]{display:none}
 .media .alt{position:absolute;inset:0;display:grid;place-items:center;font:400 44px "Instrument Serif",Georgia,serif;color:var(--line)}
 .media figcaption{font-size:12px;color:var(--dim);padding:8px 14px;display:flex;justify-content:space-between;gap:12px}
@@ -80,7 +81,7 @@ footer{margin:0;flex:none}
 <main id="main">
 <header>
 <h1>A aceleração das descobertas humanas</h1>
-<p class="lede">Quase 100 marcos, da primeira ferramenta de pedra à inteligência artificial.</p>
+<p class="lede">Mais de 100 marcos, da pedra lascada à inteligência artificial e à volta à Lua.</p>
 </header>
 <div class="left" id="left">
 <div class="stage"><canvas id="c" tabindex="0" aria-label="Gráfico animado do número acumulado de descobertas humanas ao longo do tempo. A linha fica quase plana por milênios e sobe na vertical nos últimos dois séculos."></canvas>
@@ -176,7 +177,7 @@ $('snd').onclick=e=>{soundOn=!soundOn;e.currentTarget.setAttribute('aria-pressed
 $('zoom').onclick=e=>{zT=zT?0:1;e.currentTarget.setAttribute('aria-pressed',!!zT);e.currentTarget.textContent=zT?'Ver escala completa':'Ampliar últimos 300 anos';};
 const ERAS=[['Pré-história',0],['Agricultura',timeOf(-9500)-.3],['Antiguidade',timeOf(-3600)],['Idade Média',timeOf(500)],['Revolução Industrial',timeOf(1750)],['Século 20',timeOf(1899)],['Era digital',timeOf(1975)],['Hoje',TOTAL]];
 ERAS.forEach(([n,v])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>seek(v);$('eras').appendChild(b);});
-function when(p){const pv=P[p.i-1];let s=fmtShort(p.yr);if(pv){const dy=p.yr-pv.yr;const ds=dy<1?'no mesmo ano de':dy>=1e6?millions(dy)+' de anos depois de':dy>=1000?Math.round(dy/1000).toLocaleString('pt-BR')+' mil anos depois de':Math.round(dy)+(Math.round(dy)===1?' ano':' anos')+' depois de';s+=', '+ds+' '+pv.n;}return s;}
+function when(p){const pv=P[p.i-1];let s=fmtShort(p.yr);if(pv){const dy=Math.floor(p.yr)-Math.floor(pv.yr);const ds=dy<1?'no mesmo ano de':dy>=1e6?millions(dy)+' de anos depois de':dy>=1000?Math.round(dy/1000).toLocaleString('pt-BR')+' mil anos depois de':Math.round(dy)+(Math.round(dy)===1?' ano':' anos')+' depois de';s+=', '+ds+' '+pv.n;}return s;}
 // sel>=0: ponto escolhido pela pessoa, o cartão fica nele. sel<0: o cartão acompanha a descoberta mais recente.
 function select(i,jump){sel=clamp(i,0,N-1);const p=P[sel];
 if(jump){seek(p.t+.001);setPlaying(false);if(soundOn){ensureAudio();boom(au,au.ac.currentTime,panOf(SC.px(p.yr,z)),p.r>0);}}
@@ -195,7 +196,7 @@ const p=P[i],kind=p.r===1?'Revolução':p.r===2?'Marco histórico':'Descoberta';
 $('card').innerHTML='<div class="kind">'+kind+' '+(p.i+1)+' de '+N+'</div><h2>'+p.n+'</h2><div class="when">'+when(p)+'</div><p>'+p.d+'</p><div class="nav">'+(i>0?'<button id="prv">Anterior</button>':'')+(i<N-1?'<button id="nxt">Próxima</button>':'')+'</div>';
 if($('prv'))$('prv').onclick=()=>select(i-1,true);if($('nxt'))$('nxt').onclick=()=>select(i+1,true);
 const im=$('img'),src=p.img?imgAt(p,IMG_W):'';$('media').hidden=false;$('alt').textContent=src?'':fmtShort(p.yr);
-if(!src){im.classList.remove('on');im.removeAttribute('src');}else if(im.getAttribute('src')!==src){im.classList.remove('on');im.onload=()=>im.classList.add('on');fallback(im,p);im.src=src;}
+if(!src){im.classList.remove('on');im.removeAttribute('src');}else if(im.getAttribute('src')!==src){im.classList.remove('on');im.onload=()=>{im.classList.toggle('tall',im.naturalHeight>im.naturalWidth*1.05);im.classList.add('on');};fallback(im,p);im.src=src;}
 im.alt=p.n;
 $('cap').innerHTML=p.img?'<a href="'+fileOf(p)+'" target="_blank" rel="noopener">Imagem: Wikimedia Commons</a><a href="'+p.wiki+'" target="_blank" rel="noopener">Ler na Wikipédia</a>':'';
 P.slice(i+1,i+4).forEach(q=>{if(q.img)new Image().src=imgAt(q,IMG_W);});
