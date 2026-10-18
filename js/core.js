@@ -23,6 +23,8 @@ if(!b)b={t:end,yr:NOW};
 if(t>=b.t)return b.yr;
 const k=clamp(((t-a.t)/(b.t-a.t)-HOLD)/(1-HOLD),0,1);
 return NOW+C-Math.exp(lerp(u(a.yr),u(b.yr),k));}
-function fmtYear(y){const ago=NOW-y;if(ago>=1e6)return'há '+(ago/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' milhões de anos';if(ago>=12000)return'há '+Math.round(ago/1000).toLocaleString('pt-BR')+' mil anos';if(y<0)return Math.round(-y).toLocaleString('pt-BR')+' a.C.';return Math.max(1,Math.floor(y))+' d.C.';}
+// "1 milhão", "2,3 milhões".
+const millions=v=>{const s=(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1});return s+(s==='1'?' milhão':' milhões');};
+function fmtYear(y){const ago=NOW-y;if(ago>=1e6)return'há '+millions(ago)+' de anos';if(ago>=12000)return'há '+Math.round(ago/1000).toLocaleString('pt-BR')+' mil anos';if(y<0)return Math.round(-y).toLocaleString('pt-BR')+' a.C.';return Math.max(1,Math.floor(y))+' d.C.';}
 const fmtShort=y=>y<Y0?fmtYear(y):y<0?Math.round(-y).toLocaleString('pt-BR')+' a.C.':String(Math.floor(y));
 const colOf=p=>p.r===1?'#FFD27A':'#E9E3D3';

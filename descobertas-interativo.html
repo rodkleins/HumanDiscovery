@@ -57,26 +57,27 @@ button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visib
 .thumbs span{display:block;padding:5px 6px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 footer{color:var(--dim);font-size:13px;margin-top:28px;max-width:70ch}
 svg{width:18px;height:18px;flex:none}
-/* Telas largas: tudo cabe numa tela, sem rolagem. O gráfico fica em 16:9 ajustado à altura e o cartão vai para a direita. */
+/* Telas largas: tudo cabe numa tela, sem rolagem. fitPage() aplica zoom em main para que a página se comporte como
+   uma tela de ~1440×800 em qualquer monitor (inclusive 4K), e fitCanvas() dimensiona o gráfico em 16:9 pela altura livre. */
 @media (min-width:1100px) and (min-height:600px){
-main{max-width:1680px;height:100vh;height:100dvh;padding:20px 28px;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,24vw,380px);grid-template-rows:auto minmax(0,1fr);gap:14px 24px}
+main{max-width:none;height:100vh;padding:20px 28px;display:grid;grid-template-columns:auto 360px;grid-template-rows:auto minmax(0,1fr);justify-content:center;gap:14px 24px}
 header{grid-column:1/-1;display:flex;align-items:baseline;gap:8px 28px;flex-wrap:wrap}
-h1{font-size:clamp(30px,2.8vw,44px);margin:0;max-width:none}
+h1{font-size:40px;margin:0;max-width:none}
 .lede{margin:0;font-size:15px}
 .left{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:14px;min-height:0}
 .stage{flex:none;justify-content:flex-start}
-.controls,.eras{margin:0}
+.controls,.eras{margin:0;flex:none;contain:inline-size}
 aside{grid-column:2;grid-row:2;display:flex;flex-direction:column;gap:14px;min-height:0;overflow:auto}
 .card{margin:0;flex:none}
-.media{margin:0;flex:1 1 auto;min-height:150px}
-.media .ph{height:auto;flex:1}
+.media{margin:0;flex:0 1 auto;min-height:140px}
+.media .ph{height:auto;aspect-ratio:4/3;flex:1 1 auto;min-height:0}
 .thumbs{margin:0;flex:none}
 footer{margin:0;flex:none}
 }
 </style>
 </head>
 <body>
-<main>
+<main id="main">
 <header>
 <h1>A aceleração das descobertas humanas</h1>
 <p class="lede">Quase 100 marcos, da primeira ferramenta de pedra à inteligência artificial.</p>
@@ -94,7 +95,7 @@ footer{margin:0;flex:none}
 </div>
 <div class="eras" id="eras" aria-label="Ir para uma época"></div>
 </div>
-<aside>
+<aside id="side">
 <section class="card" id="card" aria-live="polite"><div class="kind">Explore</div><h2>Clique em um ponto da linha</h2><p>Cada ponto é uma descoberta. Dê o play, arraste a linha do tempo ou use as setas do teclado para ir de uma à outra. Espaço pausa e F liga a tela cheia.</p></section>
 <figure class="media" id="media" hidden><div class="ph"><div class="alt" id="alt"></div><img id="img" alt=""></div><figcaption id="cap"></figcaption></figure>
 <div class="thumbs" id="thumbs" aria-label="Descobertas anteriores"></div>
@@ -112,11 +113,20 @@ const $=id=>document.getElementById(id),cv=$('c'),g=cv.getContext('2d'),RM=match
 let G,SC;
 // Em telas largas o canvas é dimensionado para caber na coluna junto com os controles, alinhado ao topo do cartão.
 const WIDE=matchMedia('(min-width:1100px) and (min-height:600px)');
+function fitPage(){const m=$('main');if(!WIDE.matches){m.style.zoom=m.style.height='';return;}
+const k=clamp(Math.min(innerWidth/1440,innerHeight/800),1,3);m.style.zoom=k;m.style.height=innerHeight/k+'px';}
+// Largura livre = main menos a coluna do cartão; altura livre = coluna da esquerda menos controles e épocas.
+// Duas passadas porque os controles podem quebrar linha quando o gráfico muda de largura.
 function fitCanvas(){if(!WIDE.matches){cv.style.width=cv.style.height='';return;}
-const col=$('left'),free=col.clientHeight-$('ctrl').offsetHeight-$('eras').offsetHeight-28,w=Math.max(240,Math.min(col.clientWidth,free*G.W/G.H));
-cv.style.width=w+'px';cv.style.height=w*G.H/G.W+'px';}
-function layout(){G=geometry(cv.parentElement.clientWidth<700);SC=scales(G,P);if(cv.width!==G.W){cv.width=G.W;cv.height=G.H;}fitCanvas();}
-layout();addEventListener('resize',layout);new ResizeObserver(layout).observe($('left'));
+const m=$('main'),cs=getComputedStyle(m),avail=m.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight)-$('side').offsetWidth-parseFloat(cs.columnGap);
+for(let k=0;k<2;k++){const free=$('left').clientHeight-$('ctrl').offsetHeight-$('eras').offsetHeight-28,w=Math.floor(Math.max(480,Math.min(avail,free*G.W/G.H)));
+cv.style.width=w+'px';cv.style.height=w*G.H/G.W+'px';}}
+// RS: resolução do canvas além do tamanho lógico, para não desfocar em telas de alta densidade (até 2×).
+let RS=1;
+function layout(){fitPage();G=geometry(!WIDE.matches&&cv.parentElement.clientWidth<700);SC=scales(G,P);fitCanvas();
+RS=clamp(Math.ceil(cv.getBoundingClientRect().width*devicePixelRatio/G.W*4-.2)/4,1,2);
+if(cv.width!==Math.round(G.W*RS)||cv.height!==Math.round(G.H*RS)){cv.width=Math.round(G.W*RS);cv.height=Math.round(G.H*RS);}}
+layout();addEventListener('resize',layout);new ResizeObserver(()=>layout()).observe(document.body);
 let z=0,zT=0;
 const panOf=x=>(x-G.W/2)/G.W*.8;
 let au,dr,soundOn=true;
@@ -133,7 +143,7 @@ if(t>=nextBeat){if(t<END)beat(au,now,.35+.45*pr);nextBeat=t+beatGap(pr);}}
 function draw(){
 const{W,H,FS}=G,done=P.filter(p=>p.t<=t);P.forEach(p=>{p.X=SC.px(p.yr,z);p.Y=SC.py(p.i,z);});
 const shake=playing&&!RM.matches?shakeOf(done,t):0;
-g.setTransform(1,0,0,1,0,0);g.fillStyle='#06080F';g.fillRect(0,0,W,H);
+g.setTransform(RS,0,0,RS,0,0);g.fillStyle='#06080F';g.fillRect(0,0,W,H);
 if(shake)g.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
 drawAxis(g,G,SC,z,1);
 const tip=drawLine(g,P,t);
@@ -144,7 +154,7 @@ const out=t>END+1.6?Math.max(0,1-(t-END-1.6)):1,back=t>END+5.5?Math.min(1,(t-END
 drawLabels(g,G,done,t,la);
 drawBursts(g,done,t);
 if(playing)drawFlash(g,G,done,t);
-g.setTransform(1,0,0,1,0,0);
+g.setTransform(RS,0,0,RS,0,0);
 if(t>=PRE_T[0]-1){drawHUD(g,G,fmtYear(yearOfT(P,t,END)),done.length,Math.min(1,t-PRE_T[0]+1)*la);
 const cur=done[done.length-1];if(cur&&t<END+1.6)drawCaption(g,G,cur,Math.min(1,(t-cur.t)*6)*(t>END?Math.max(0,1-(t-END)):1));}
 if(t<3.5)drawIntro(g,G,t<.3?t/.3:t<2?1:Math.max(0,1-(t-2)/1.5));
@@ -166,7 +176,7 @@ $('snd').onclick=e=>{soundOn=!soundOn;e.currentTarget.setAttribute('aria-pressed
 $('zoom').onclick=e=>{zT=zT?0:1;e.currentTarget.setAttribute('aria-pressed',!!zT);e.currentTarget.textContent=zT?'Ver escala completa':'Ampliar últimos 300 anos';};
 const ERAS=[['Pré-história',0],['Agricultura',timeOf(-9500)-.3],['Antiguidade',timeOf(-3600)],['Idade Média',timeOf(500)],['Revolução Industrial',timeOf(1750)],['Século 20',timeOf(1899)],['Era digital',timeOf(1975)],['Hoje',TOTAL]];
 ERAS.forEach(([n,v])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>seek(v);$('eras').appendChild(b);});
-function when(p){const pv=P[p.i-1];let s=fmtShort(p.yr);if(pv){const dy=p.yr-pv.yr;const ds=dy<1?'no mesmo ano de':dy>=1e6?(dy/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' milhões de anos depois de':dy>=1000?Math.round(dy/1000).toLocaleString('pt-BR')+' mil anos depois de':Math.round(dy)+(Math.round(dy)===1?' ano':' anos')+' depois de';s+=', '+ds+' '+pv.n;}return s;}
+function when(p){const pv=P[p.i-1];let s=fmtShort(p.yr);if(pv){const dy=p.yr-pv.yr;const ds=dy<1?'no mesmo ano de':dy>=1e6?millions(dy)+' de anos depois de':dy>=1000?Math.round(dy/1000).toLocaleString('pt-BR')+' mil anos depois de':Math.round(dy)+(Math.round(dy)===1?' ano':' anos')+' depois de';s+=', '+ds+' '+pv.n;}return s;}
 // sel>=0: ponto escolhido pela pessoa, o cartão fica nele. sel<0: o cartão acompanha a descoberta mais recente.
 function select(i,jump){sel=clamp(i,0,N-1);const p=P[sel];
 if(jump){seek(p.t+.001);setPlaying(false);if(soundOn){ensureAudio();boom(au,au.ac.currentTime,panOf(SC.px(p.yr,z)),p.r>0);}}

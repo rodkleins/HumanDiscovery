@@ -84,7 +84,7 @@ O cartão à direita acompanha a animação e mostra sempre a descoberta mais re
 
 ## Layout responsivo (interativo)
 
-Em telas largas (`min-width:1100px` e `min-height:600px`) a página cabe numa tela só: coluna da esquerda com gráfico, controles e épocas, e coluna da direita com cartão, imagem, miniaturas e rodapé. `fitCanvas()` calcula o tamanho do canvas para caber na coluna junto com os controles, alinhado ao topo do cartão. Em telas menores tudo empilha e a página rola. Há um botão central "Começar" sobre o gráfico no início e no fim, e tela cheia pelo botão ou pela tecla F.
+Em telas largas (`min-width:1100px` e `min-height:600px`) a página cabe numa tela só: coluna da esquerda com gráfico, controles e épocas, e coluna da direita com cartão, imagem, miniaturas e rodapé. `fitPage()` aplica `zoom` em `main` (entre 1 e 3) para que a página se comporte como uma tela de cerca de 1440×800 em qualquer monitor, inclusive 4K, mantendo as proporções. `fitCanvas()` calcula o tamanho do canvas pela altura livre (descontando controles e épocas, que não encolhem) e pela largura livre ao lado da coluna do cartão; a coluna da esquerda tem a largura do gráfico e o conjunto fica centralizado. O canvas ganha resolução extra `RS` (até 2×) conforme a densidade da tela, e todo `setTransform` do desenho usa `RS`. Em telas menores tudo empilha e a página rola. Há um botão central "Começar" sobre o gráfico no início e no fim, e tela cheia pelo botão ou pela tecla F.
 
 `layout()` escolhe entre dois tamanhos lógicos de canvas: 1920×1080 no desktop e 1080×1350 (mais vertical) quando o contêiner tem menos de 700px, com textos maiores (`FS`) e menos marcações no eixo. O canvas é redesenhado a cada quadro, então todas as posições são recalculadas.
 
