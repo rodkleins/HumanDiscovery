@@ -1,6 +1,6 @@
 # A aceleração das descobertas humanas
 
-Projeto de visualização que mostra, como uma linha acumulada, mais de 100 grandes descobertas da humanidade (116 hoje), da ferramenta de pedra (3,3 milhões de anos atrás) à Artemis II (2026). A tese visual: a linha fica quase plana por milênios e sobe como uma parede nos últimos dois séculos, enquanto as explosões sonoras ficam cada vez mais frequentes.
+Projeto de visualização que mostra, como uma linha acumulada, mais de 100 grandes descobertas da humanidade (127 hoje), da ferramenta de pedra (3,3 milhões de anos atrás) à Artemis II (2026). A tese visual: a linha fica quase plana por milênios e sobe como uma parede nos últimos dois séculos, enquanto as explosões sonoras ficam cada vez mais frequentes.
 
 São duas páginas HTML que compartilham scripts em `js/`, sem build, sem dependências e sem backend. Basta abrir no navegador (funciona também via `file://`, por isso os scripts são clássicos e não módulos ES). Publicado no GitHub Pages a partir do repositório `rodkleins/HumanDiscovery`; o `index.html` redireciona para o interativo.
 
@@ -29,7 +29,7 @@ O array `M` em `js/data.js` guarda os marcos em ordem cronológica, cada item `[
 
 O ano é negativo para a.C. Anos fracionários (por exemplo `1969.5`, `2020.5`) servem só para ordenar dois marcos do mesmo ano; na exibição o ano é arredondado para baixo.
 
-O tipo controla o destaque: `0` é descoberta comum (ponto pequeno, explosão comum), `1` é revolução (dourado, explosão grande, tremor de tela, clarão, rótulo fixo), `2` é marco histórico (branco, explosão grande, rótulo fixo). Há uma série de marcos da corrida espacial e dos foguetes (Goddard, V-2, NASA, Tereshkova, Leonov, Salyut, Apollo-Soyuz, Voyager, ônibus espacial, Mir, China, Marcos Pontes, SpaceX, Blue Origin, Starship, Artemis). Hoje são revoluções a agricultura e as quatro revoluções industriais; marcos históricos são Escrita, Imprensa, O homem pisa na Lua, Internet e IA generativa.
+O tipo controla o destaque: `0` é descoberta comum (ponto pequeno, explosão comum), `1` é revolução (dourado, explosão grande, tremor de tela, clarão, rótulo fixo), `2` é marco histórico (branco, explosão grande, rótulo fixo). Há uma série de marcos da corrida espacial e dos foguetes (Goddard, V-2, NASA, Tereshkova, Leonov, Salyut, Apollo-Soyuz, Voyager, ônibus espacial, Mir, China, Marcos Pontes, SpaceX, Blue Origin, Starship, Artemis). Há também uma série de robótica (R.U.R., Unimate, WABOT-1, ASIMO, Roomba, BigDog, Atlas, Spot, Optimus, Atlas elétrico, Unitree); o WABOT-1 não tem imagem livre no Commons e mostra só o ano. Hoje são revoluções a agricultura e as quatro revoluções industriais; marcos históricos são Escrita, Imprensa, O homem pisa na Lua, Internet e IA generativa.
 
 Os seis primeiros itens (anteriores a 10 mil a.C.) são a "pré-história" e têm tratamento próprio de tempo e eixo, descrito abaixo. Se adicionar ou remover itens pré-históricos, ajuste também o array `PRE_T` nas duas páginas, que precisa ter exatamente um tempo por item pré-histórico (`makePoints` avisa no console se não bater).
 
