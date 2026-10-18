@@ -2,15 +2,22 @@
 
 Projeto de visualização que mostra, como uma linha acumulada, quase 100 grandes descobertas da humanidade, da ferramenta de pedra (3,3 milhões de anos atrás) aos agentes de IA (2024). A tese visual: a linha fica quase plana por milênios e sobe como uma parede nos últimos dois séculos, enquanto as explosões sonoras ficam cada vez mais frequentes.
 
-São duas páginas HTML independentes, cada uma num único arquivo, sem build, sem dependências e sem backend. Basta abrir no navegador.
+São duas páginas HTML que compartilham scripts em `js/`, sem build, sem dependências e sem backend. Basta abrir no navegador (funciona também via `file://`, por isso os scripts são clássicos e não módulos ES). Publicado no GitHub Pages a partir do repositório `rodkleins/HumanDiscovery`; o `index.html` redireciona para o interativo.
 
 ## Arquivos
 
 `descobertas-interativo.html` é o site interativo: player com play/pausa, barra de tempo, velocidade, som liga/desliga, atalhos por época, zoom nos últimos 300 anos, clique nos pontos abre um cartão com descrição, navegação por teclado. É a versão para publicar.
 
-`aceleracao.html` é a versão "vídeo": tela de início com botão, depois roda sozinha do começo ao fim em 16:9 (1, 1,5 ou 2 minutos), pensada para gravar a tela com OBS capturando o áudio do sistema. Não tem controles durante a reprodução e o cursor some.
+`aceleracao.html` é a versão "vídeo": tela de início com botão, depois roda sozinha do começo ao fim em 16:9 (1, 1,5 ou 2 minutos). O botão "Gravar vídeo" exporta direto do navegador: `MediaRecorder` captura o canvas (`captureStream`) e a saída do compressor (`MediaStreamDestination`) e baixa um `.webm` (VP9 + Opus, 1920×1080) no fim. A gravação é em tempo real e a aba precisa ficar visível. Ainda dá para gravar a tela com OBS. Não tem controles durante a reprodução e o cursor some.
 
-As duas compartilham a mesma lógica visual e sonora, mas o código está duplicado (não há módulo comum). Uma melhoria natural é extrair dados, mapeamentos e áudio para arquivos compartilhados.
+Código compartilhado, carregado nesta ordem (os nomes ficam no escopo global):
+
+- `js/data.js`: o array `M` de marcos.
+- `js/core.js`: `NOW` e constantes do eixo, funções de tempo (`prog`, `makePoints`, `retime`, `yearOfT`) e formatação de anos.
+- `js/audio.js`: `createSound`, `boom`, `beat`, `beatGap` e `drone`.
+- `js/render.js`: `geometry`, `scales` e as funções de desenho (`drawAxis`, `drawLine`, `drawLabels`, `drawBursts`, `drawHUD` etc.), que recebem o contexto `g` e a geometria `G`.
+
+Cada página guarda só o que é dela: `PRE_T`, `MAIN`, `D`, a orquestração do tempo, os controles e, no vídeo, o agendamento do som e a gravação.
 
 ## Stack
 
@@ -18,13 +25,13 @@ HTML, CSS e JavaScript puro. Desenho todo em `<canvas>` 2D. Áudio todo sintetiz
 
 ## Dados
 
-O array `M` guarda os marcos em ordem cronológica. Na versão interativa cada item é `[ano, nome, tipo, descrição]`; na versão vídeo é `[ano, nome, tipo]`.
+O array `M` em `js/data.js` guarda os marcos em ordem cronológica, cada item `[ano, nome, tipo, descrição]`. As duas páginas usam a mesma lista.
 
 O ano é negativo para a.C. Anos fracionários (por exemplo `1969.5`, `2020.5`) servem só para ordenar dois marcos do mesmo ano; na exibição o ano é arredondado para baixo.
 
 O tipo controla o destaque: `0` é descoberta comum (ponto pequeno, explosão comum), `1` é revolução (dourado, explosão grande, tremor de tela, clarão, rótulo fixo), `2` é marco histórico (branco, explosão grande, rótulo fixo). Hoje são revoluções a agricultura e as quatro revoluções industriais; marcos históricos são Escrita, Imprensa, O homem pisa na Lua, Internet e IA generativa.
 
-Os seis primeiros itens (anteriores a 10 mil a.C.) são a "pré-história" e têm tratamento próprio de tempo e eixo, descrito abaixo. Se adicionar ou remover itens pré-históricos, ajuste também o array `PRE_T`, que precisa ter exatamente um tempo por item pré-histórico.
+Os seis primeiros itens (anteriores a 10 mil a.C.) são a "pré-história" e têm tratamento próprio de tempo e eixo, descrito abaixo. Se adicionar ou remover itens pré-históricos, ajuste também o array `PRE_T` nas duas páginas, que precisa ter exatamente um tempo por item pré-histórico (`makePoints` avisa no console se não bater).
 
 ## Eixo horizontal (anos)
 
@@ -51,7 +58,7 @@ Na prática, com duração de 1min30: agricultura aparece aos 15s, a imprensa ao
 
 Constantes de tempo: `INTRO` (frase de abertura), `PRE_T` (instantes das explosões da pré-história, num prólogo enquanto o ano rola de "há 3,3 milhões de anos" até 12 mil anos atrás), `MAIN` (início da parte linear), `D` (duração da parte principal), `OUTRO`/`TOTAL` (fechamento). Na versão vídeo `D` é calculado a partir da duração escolhida (`total - MAIN - OUTRO`).
 
-O ano grande no canto superior esquerdo rola continuamente pela inversa da função de tempo (`yearAt`), então pode não bater exatamente com o ano da última descoberta exibida na legenda. Uma melhoria possível é "travar" o ano no momento de cada explosão.
+O ano grande no canto superior esquerdo é travado nas descobertas (`yearOfT`): no instante de cada explosão ele mostra exatamente o ano do marco, fica parado por `HOLD` (40%) do intervalo até o próximo e então rola, em escala logarítmica, chegando ao ano do próximo marco no momento da explosão dele. Depois do último marco ele vai até `NOW`. Vale também para a pré-história e para o ano ao lado da barra de tempo do interativo.
 
 ## Áudio
 
@@ -77,7 +84,7 @@ A legenda grande embaixo mostra a descoberta mais recente com o ano.
 
 ## Ideias de melhoria já discutidas
 
-Travar o ano do topo na data de cada descoberta. Modo "rolagem" (scrollytelling), em que a linha se desenha conforme a pessoa desce a página. Zoom automático da câmera no clímax da versão vídeo. Extrair código comum entre as duas versões. Exportar o vídeo direto do navegador (por exemplo com `MediaRecorder` capturando o canvas e o áudio) em vez de depender de gravação de tela. Permitir editar a lista de marcos por um JSON separado.
+Modo "rolagem" (scrollytelling), em que a linha se desenha conforme a pessoa desce a página. Zoom automático da câmera no clímax da versão vídeo. Permitir editar a lista de marcos por um JSON separado.
 
 ## Cuidados
 
