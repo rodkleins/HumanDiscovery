@@ -16,8 +16,13 @@ body{margin:0;background:var(--bg);color:var(--bone);font:16px/1.6 Archivo,"Helv
 main{max-width:1280px;margin:0 auto;padding:32px 20px 48px}
 h1{font:400 clamp(36px,5.5vw,64px)/1.05 "Instrument Serif",Georgia,serif;margin:0 0 10px;max-width:18ch}
 .lede{color:var(--muted);margin:0 0 24px;max-width:60ch}
-.stage{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg)}
-canvas{display:block;width:100%;height:auto;touch-action:manipulation}
+.stage{position:relative;display:flex;align-items:center;justify-content:center;min-width:0}
+canvas{display:block;width:100%;height:auto;touch-action:manipulation;border:1px solid var(--line);border-radius:14px;background:var(--bg)}
+.start{position:absolute;inset:0;margin:auto;width:max-content;height:max-content;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0;min-height:0;background:none;border:0;border-radius:0;font:400 clamp(20px,2.4vw,30px) "Instrument Serif",Georgia,serif;color:var(--bone)}
+.start .disc{width:clamp(72px,9vw,112px);height:clamp(72px,9vw,112px);border-radius:50%;background:var(--bone);color:var(--bg);display:grid;place-items:center;box-shadow:0 0 0 10px rgba(255,210,122,.12),0 0 60px rgba(255,210,122,.35);transition:transform .2s,box-shadow .2s}
+.start .disc svg{width:40%;height:40%;margin-left:8%}
+.start:hover .disc{transform:scale(1.06);box-shadow:0 0 0 14px rgba(255,210,122,.16),0 0 80px rgba(255,210,122,.45)}
+.start[hidden]{display:none}
 .controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:14px}
 .scrub{flex:1 1 260px;display:flex;align-items:center;gap:12px;min-width:0}
 input[type=range]{flex:1;accent-color:#FFD27A;min-width:0;height:44px;margin:0}
@@ -26,6 +31,8 @@ button,select{font:500 15px Archivo,sans-serif;color:var(--bone);background:var(
 button:hover,select:hover{border-color:#3A4152}
 button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
 button.primary{background:var(--bone);color:var(--bg);border-color:var(--bone)}
+button.icon{padding:0;width:44px;justify-content:center}
+button[hidden]{display:none}
 button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
 .eras{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:4px}
 .eras button{flex:0 0 auto;font-weight:400;color:var(--muted)}
@@ -37,23 +44,42 @@ button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visib
 .card .nav{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 footer{color:var(--dim);font-size:13px;margin-top:28px;max-width:70ch}
 svg{width:18px;height:18px;flex:none}
+/* Telas largas: tudo cabe numa tela, sem rolagem. O gráfico fica em 16:9 ajustado à altura e o cartão vai para a direita. */
+@media (min-width:1100px) and (min-height:600px){
+main{max-width:1680px;height:100vh;height:100dvh;padding:20px 28px;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,24vw,380px);grid-template-rows:auto minmax(0,1fr) auto auto;gap:14px 24px}
+header{grid-column:1/-1;display:flex;align-items:baseline;gap:8px 28px;flex-wrap:wrap}
+h1{font-size:clamp(30px,2.8vw,44px);margin:0;max-width:none}
+.lede{margin:0;font-size:15px}
+.stage{grid-column:1;grid-row:2;min-height:0}
+canvas{width:auto;max-width:100%;max-height:100%}
+.controls,.eras{grid-column:1;margin:0}
+aside{grid-column:2;grid-row:2/5;display:flex;flex-direction:column;gap:16px;min-height:0;overflow:auto}
+.card{margin:0}
+footer{margin:0}
+}
 </style>
 </head>
 <body>
 <main>
+<header>
 <h1>A aceleração das descobertas humanas</h1>
-<p class="lede">Quase 100 marcos, da primeira ferramenta de pedra à inteligência artificial. Dê o play, arraste a linha do tempo ou clique em um ponto para conhecer cada descoberta.</p>
-<div class="stage"><canvas id="c" tabindex="0" aria-label="Gráfico animado do número acumulado de descobertas humanas ao longo do tempo. A linha fica quase plana por milênios e sobe na vertical nos últimos dois séculos."></canvas></div>
+<p class="lede">Quase 100 marcos, da primeira ferramenta de pedra à inteligência artificial.</p>
+</header>
+<div class="stage"><canvas id="c" tabindex="0" aria-label="Gráfico animado do número acumulado de descobertas humanas ao longo do tempo. A linha fica quase plana por milênios e sobe na vertical nos últimos dois séculos."></canvas>
+<button id="start" class="start"><span class="disc"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></span><span id="startTxt">Começar</span></button></div>
 <div class="controls">
 <button id="play" class="primary" aria-label="Reproduzir"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="ico" d="M7 4l13 8-13 8z"/></svg><span id="playTxt">Reproduzir</span></button>
 <div class="scrub"><input id="scrub" type="range" min="0" max="100" step="0.01" value="0" aria-label="Linha do tempo"><span class="yr" id="yr" aria-live="off">há 3,3 milhões de anos</span></div>
 <select id="speed" aria-label="Velocidade"><option value="0.5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option></select>
 <button id="snd" aria-pressed="true">Som ligado</button>
 <button id="zoom" aria-pressed="false">Ampliar últimos 300 anos</button>
+<button id="fs" class="icon" aria-label="Tela cheia" title="Tela cheia (F)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path id="fsIco" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </div>
 <div class="eras" id="eras" aria-label="Ir para uma época"></div>
-<section class="card" id="card" aria-live="polite"><div class="kind">Explore</div><h2>Clique em um ponto da linha</h2><p>Cada ponto é uma descoberta. Você também pode usar as setas do teclado para ir de uma à outra e a barra de espaço para pausar.</p></section>
+<aside>
+<section class="card" id="card" aria-live="polite"><div class="kind">Explore</div><h2>Clique em um ponto da linha</h2><p>Cada ponto é uma descoberta. Dê o play, arraste a linha do tempo ou use as setas do teclado para ir de uma à outra. Espaço pausa e F liga a tela cheia.</p></section>
 <footer>As datas mais antigas são aproximadas e a seleção de marcos é uma curadoria, não uma lista completa. A ideia é mostrar o ritmo das descobertas, não ranqueá-las.</footer>
+</aside>
 </main>
 <script src="js/data.js"></script>
 <script src="js/core.js"></script>
@@ -100,9 +126,14 @@ if(t<3.5)drawIntro(g,G,t<.3?t/.3:t<2?1:Math.max(0,1-(t-2)/1.5));
 if(playing&&t>END+.85&&t<END+1.4)drawWhiteFlash(g,G,1-(t-END-.85)/.55);
 if(t>END+1.6&&t<END+7){const fade=Math.min(1,(END+7-t)/1.5);drawOutro(g,G,Math.min(1,(t-END-1.6)/1.2)*fade,clamp((t-END-3.2)/1.2,0,1)*fade);}}
 const scrub=$('scrub');scrub.max=TOTAL;
-function setPlaying(v){playing=v;$('ico').setAttribute('d',v?'M6 4h4v16H6zM14 4h4v16h-4z':'M7 4l13 8-13 8z');$('playTxt').textContent=v?'Pausar':(t>=TOTAL?'Assistir de novo':'Reproduzir');$('play').setAttribute('aria-label',$('playTxt').textContent);}
+function setPlaying(v){playing=v;$('start').hidden=v||(t>0&&t<TOTAL);$('startTxt').textContent=t>=TOTAL?'Assistir de novo':'Começar';$('ico').setAttribute('d',v?'M6 4h4v16H6zM14 4h4v16h-4z':'M7 4l13 8-13 8z');$('playTxt').textContent=v?'Pausar':(t>=TOTAL?'Assistir de novo':'Reproduzir');$('play').setAttribute('aria-label',$('playTxt').textContent);}
 function seek(v){t=clamp(v,0,TOTAL);prevT=t;nextBeat=t+.5;}
 $('play').onclick=()=>{if(playing){setPlaying(false);return;}ensureAudio();if(t>=TOTAL)seek(0);setPlaying(true);};
+$('start').onclick=()=>{$('play').click();cv.focus({preventScroll:true});};
+const root=document.documentElement,fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
+function toggleFs(){if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);else(root.requestFullscreen||root.webkitRequestFullscreen).call(root);}
+if(root.requestFullscreen||root.webkitRequestFullscreen){$('fs').hidden=false;$('fs').onclick=toggleFs;}
+['fullscreenchange','webkitfullscreenchange'].forEach(e=>document.addEventListener(e,()=>{const on=!!fsEl();$('fs').setAttribute('aria-label',on?'Sair da tela cheia':'Tela cheia');$('fsIco').setAttribute('d',on?'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5':'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5');layout();}));
 scrub.addEventListener('input',()=>{scrubbing=true;seek(+scrub.value);});
 ['change','pointerup','touchend'].forEach(e=>scrub.addEventListener(e,()=>{scrubbing=false;}));
 $('speed').onchange=e=>{speed=+e.target.value;};
@@ -123,12 +154,13 @@ cv.addEventListener('mousemove',e=>{const[x,y]=cpt(e);hover=nearest(x,y);cv.styl
 cv.addEventListener('mouseleave',()=>{hover=-1;});
 document.addEventListener('keydown',e=>{const tg2=e.target.tagName;
 if(e.key===' '&&!['BUTTON','SELECT','INPUT','A'].includes(tg2)){e.preventDefault();$('play').click();}
+else if((e.key==='f'||e.key==='F')&&!e.metaKey&&!e.ctrlKey&&!$('fs').hidden&&!['SELECT','INPUT'].includes(tg2))toggleFs();
 else if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&!['SELECT','INPUT'].includes(tg2)){e.preventDefault();const base=sel>=0?sel:Math.max(0,P.filter(p=>p.t<=t).length-1);select(base+(e.key==='ArrowRight'?1:-1),true);}});
 function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
 if(playing&&!scrubbing){t+=dt*speed;if(t>=TOTAL){t=TOTAL;setPlaying(false);}}
 z+=(zT-z)*Math.min(1,dt*4);if(Math.abs(zT-z)<.002)z=zT;
 audioTick();draw();
-if(!scrubbing)scrub.value=t;$('yr').textContent=fmtYear(yearOfT(P,t,END));
+if(!scrubbing)scrub.value=t;if(!playing){$('start').hidden=t>0&&t<TOTAL;$('startTxt').textContent=t>=TOTAL?'Assistir de novo':'Começar';}$('yr').textContent=fmtYear(yearOfT(P,t,END));
 prevT=t;requestAnimationFrame(frame);}
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(frame));
 </script>
