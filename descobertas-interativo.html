@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>A aceleração das descobertas humanas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Archivo:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#06080F;--panel:#0E121C;--line:#232938;--bone:#E9E3D3;--muted:#8A90A0;--dim:#6B7285;--gold:#FFD27A;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#06080F;--panel:#0E121C;--line:#232938;--bone:#E9E3D3}}
+:root[data-theme="dark"]{--bg:#06080F;--panel:#0E121C;--line:#232938;--bone:#E9E3D3}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--bone);font:16px/1.6 Archivo,"Helvetica Neue",Helvetica,sans-serif}
+main{max-width:1280px;margin:0 auto;padding:32px 20px 48px}
+h1{font:400 clamp(36px,5.5vw,64px)/1.05 "Instrument Serif",Georgia,serif;margin:0 0 10px;max-width:18ch}
+.lede{color:var(--muted);margin:0 0 24px;max-width:60ch}
+.stage{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--bg)}
+canvas{display:block;width:100%;height:auto;touch-action:manipulation}
+.controls{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:14px}
+.scrub{flex:1 1 260px;display:flex;align-items:center;gap:12px;min-width:0}
+input[type=range]{flex:1;accent-color:#FFD27A;min-width:0;height:44px;margin:0}
+.yr{font:400 22px "Instrument Serif",Georgia,serif;min-width:10ch;white-space:nowrap}
+button,select{font:500 15px Archivo,sans-serif;color:var(--bone);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:0 16px;min-height:44px;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+button:hover,select:hover{border-color:#3A4152}
+button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold)}
+button.primary{background:var(--bone);color:var(--bg);border-color:var(--bone)}
+button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+.eras{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:4px}
+.eras button{flex:0 0 auto;font-weight:400;color:var(--muted)}
+.card{margin-top:20px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px;min-height:170px}
+.card .kind{font-size:13px;color:var(--gold)}
+.card h2{font:400 34px/1.1 "Instrument Serif",Georgia,serif;margin:4px 0 2px}
+.card .when{color:var(--muted);font-size:15px}
+.card p{margin:8px 0 0;max-width:62ch}
+.card .nav{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+footer{color:var(--dim);font-size:13px;margin-top:28px;max-width:70ch}
+svg{width:18px;height:18px;flex:none}
+</style>
+</head>
+<body>
+<main>
+<h1>A aceleração das descobertas humanas</h1>
+<p class="lede">Quase 100 marcos, da primeira ferramenta de pedra à inteligência artificial. Dê o play, arraste a linha do tempo ou clique em um ponto para conhecer cada descoberta.</p>
+<div class="stage"><canvas id="c" tabindex="0" aria-label="Gráfico animado do número acumulado de descobertas humanas ao longo do tempo. A linha fica quase plana por milênios e sobe na vertical nos últimos dois séculos."></canvas></div>
+<div class="controls">
+<button id="play" class="primary" aria-label="Reproduzir"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="ico" d="M7 4l13 8-13 8z"/></svg><span id="playTxt">Reproduzir</span></button>
+<div class="scrub"><input id="scrub" type="range" min="0" max="100" step="0.01" value="0" aria-label="Linha do tempo"><span class="yr" id="yr" aria-live="off">há 3,3 milhões de anos</span></div>
+<select id="speed" aria-label="Velocidade"><option value="0.5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option></select>
+<button id="snd" aria-pressed="true">Som ligado</button>
+<button id="zoom" aria-pressed="false">Ampliar últimos 300 anos</button>
+</div>
+<div class="eras" id="eras" aria-label="Ir para uma época"></div>
+<section class="card" id="card" aria-live="polite"><div class="kind">Explore</div><h2>Clique em um ponto da linha</h2><p>Cada ponto é uma descoberta. Você também pode usar as setas do teclado para ir de uma à outra e a barra de espaço para pausar.</p></section>
+<footer>As datas mais antigas são aproximadas e a seleção de marcos é uma curadoria, não uma lista completa. A ideia é mostrar o ritmo das descobertas, não ranqueá-las.</footer>
+</main>
+<script>
+const NOW=2026;
+const M=[
+[-3300000,"Ferramentas de pedra",0,"Pedras lascadas para cortar e raspar: a primeira tecnologia, anterior ao próprio Homo sapiens."],
+[-1000000,"Primeiros usos do fogo",0,"Calor, proteção e comida cozida, que liberou mais energia para o cérebro."],
+[-300000,"Surge o Homo sapiens",0,"Os primeiros humanos anatomicamente modernos aparecem na África."],
+[-100000,"Linguagem simbólica",0,"Adornos e pigmentos indicam pensamento simbólico e linguagem complexa."],
+[-45000,"Arte rupestre",0,"Pinturas em cavernas registram animais, mãos e cenas de caça."],
+[-23000,"Agulha de costura",0,"Roupas costuradas permitiram enfrentar o frio e migrar para mais longe."],
+[-9500,"Agricultura",1,"Plantar e colher fixa os humanos em aldeias e cria excedentes de comida. É a primeira grande revolução."],
+[-8000,"Domesticação de animais",0,"Bois, cabras e ovelhas viram fonte de carne, leite, lã e força de trabalho."],
+[-7000,"Cerâmica",0,"Potes de barro cozido para guardar grãos, água e alimentos."],
+[-5000,"Metalurgia do cobre",0,"O primeiro metal trabalhado pelo homem, usado em ferramentas e adornos."],
+[-4000,"Navegação a vela",0,"Barcos movidos pelo vento abrem rotas de comércio pelo Nilo e pelo mar."],
+[-3500,"Roda",0,"Primeiro na cerâmica, depois em carroças: transporte de cargas em escala."],
+[-3200,"Escrita",2,"Na Mesopotâmia, o registro de contas vira escrita. Começa a história documentada."],
+[-3000,"Bronze",0,"A liga de cobre e estanho gera ferramentas e armas muito mais duras."],
+[-2600,"Pirâmides de Gizé",0,"Engenharia, matemática e a organização de milhares de trabalhadores."],
+[-1800,"Código de Hamurabi",0,"Um dos primeiros conjuntos de leis escritas da história."],
+[-1200,"Ferro",0,"Um metal abundante e resistente que barateia ferramentas e armas."],
+[-1050,"Alfabeto",0,"Os fenícios simplificam a escrita em poucas letras, base dos alfabetos atuais."],
+[-600,"Moeda",0,"Na Lídia surgem as moedas cunhadas, que facilitam o comércio."],
+[-300,"Geometria de Euclides",0,"Os Elementos organizam a matemática com axiomas e demonstrações."],
+[-250,"Física de Arquimedes",0,"Alavancas, empuxo e máquinas: a física aplicada da Antiguidade."],
+[105,"Papel",0,"Na China, o papel torna a escrita barata e portátil."],
+[628,"O zero como número",0,"Na Índia, o zero passa a ser tratado como número, base da matemática moderna."],
+[850,"Pólvora",0,"Descoberta na China, muda a guerra e, mais tarde, a mineração."],
+[1100,"Bússola",0,"A agulha magnética permite navegar mesmo sem ver o céu."],
+[1440,"Imprensa",2,"Gutenberg cria a prensa de tipos móveis. Livros em massa e ideias que se espalham como nunca."],
+[1492,"Grandes navegações",0,"Viagens oceânicas conectam continentes e redesenham o mapa do mundo."],
+[1522,"Primeira volta ao mundo",0,"A expedição de Fernão de Magalhães contorna o planeta pela primeira vez."],
+[1543,"Heliocentrismo",0,"Copérnico propõe que a Terra gira em torno do Sol."],
+[1608,"Telescópio",0,"Lentes que aproximam o céu. Logo depois, Galileu vê as luas de Júpiter."],
+[1665,"A célula",0,"Robert Hooke observa células ao microscópio pela primeira vez."],
+[1687,"Leis de Newton",0,"Gravitação e leis do movimento explicam do céu à maçã que cai."],
+[1712,"Máquina a vapor",0,"A máquina de Newcomen bombeia água das minas: energia mecânica sem músculos."],
+[1752,"Eletricidade e para-raios",0,"Franklin mostra que o raio é eletricidade e inventa o para-raios."],
+[1760,"1ª Revolução Industrial",1,"Vapor, fábricas e teares mecânicos: a produção sai das oficinas e passa para as máquinas."],
+[1783,"Primeiro voo de balão",0,"Os irmãos Montgolfier levam os primeiros humanos ao ar."],
+[1796,"Vacina",0,"Edward Jenner cria a vacina contra a varíola, doença que depois seria erradicada."],
+[1800,"Pilha elétrica",0,"Volta cria a primeira fonte contínua de corrente elétrica."],
+[1825,"Ferrovia",0,"A primeira linha pública de trens a vapor encurta as distâncias."],
+[1837,"Telégrafo",0,"Mensagens quase instantâneas por fio, com o código Morse."],
+[1839,"Fotografia",0,"O daguerreótipo registra imagens do mundo real."],
+[1846,"Anestesia",0,"Cirurgias sem dor com éter, uma revolução na medicina."],
+[1859,"Teoria da evolução",0,"Darwin explica a diversidade da vida pela seleção natural."],
+[1865,"Genética",0,"Mendel descobre as leis da hereditariedade cruzando ervilhas."],
+[1869,"Tabela periódica",0,"Mendeleiev organiza os elementos e prevê os que ainda faltavam."],
+[1870,"2ª Revolução Industrial",1,"Eletricidade, aço, petróleo e química: nasce a indústria moderna."],
+[1876,"Telefone",0,"A voz humana passa a viajar por fio."],
+[1879,"Lâmpada elétrica",0,"Luz elétrica prática e duradoura, que muda o ritmo das cidades."],
+[1886,"Automóvel",0,"Karl Benz patenteia o carro com motor a combustão."],
+[1895,"Raio-X e cinema",0,"Röntgen enxerga dentro do corpo e os irmãos Lumière projetam os primeiros filmes."],
+[1896,"Rádio",0,"Transmissão de sinais sem fio, base das telecomunicações."],
+[1903,"Avião",0,"Os irmãos Wright voam em 1903 e Santos-Dumont faz o 14-Bis decolar em 1906."],
+[1905,"Relatividade",0,"Einstein redefine espaço, tempo e energia."],
+[1913,"Linha de montagem",0,"Ford barateia o carro com a produção em série."],
+[1925,"Mecânica quântica",0,"A física do muito pequeno, base dos chips e dos lasers."],
+[1927,"Televisão",0,"Imagens em movimento transmitidas à distância."],
+[1928,"Penicilina",0,"Fleming descobre o primeiro antibiótico, que salvaria milhões de vidas."],
+[1945,"Energia nuclear",0,"A energia do núcleo atômico, das bombas às usinas."],
+[1946,"Computador eletrônico",0,"O ENIAC faz em segundos cálculos que levariam dias."],
+[1947,"Transistor",0,"O componente que tornou possível toda a eletrônica moderna."],
+[1953,"Estrutura do DNA",0,"Watson, Crick e Rosalind Franklin revelam a dupla hélice."],
+[1955,"Vacina contra a pólio",0,"A vacina de Salk inicia o fim da paralisia infantil."],
+[1957,"Primeiro satélite",0,"O Sputnik inaugura a era espacial."],
+[1958,"Circuito integrado",0,"Vários transistores reunidos num único chip."],
+[1960,"Laser",0,"Luz concentrada que hoje está em cirurgias, fibra óptica e indústria."],
+[1961,"Primeiro humano no espaço",0,"Yuri Gagarin dá uma volta completa ao redor da Terra."],
+[1967,"Transplante de coração",0,"Christiaan Barnard faz o primeiro transplante cardíaco humano."],
+[1969,"3ª Revolução Industrial",1,"Eletrônica, computadores e automação entram nas fábricas."],
+[1969.5,"O homem pisa na Lua",2,"A Apollo 11 leva Neil Armstrong e Buzz Aldrin à superfície lunar."],
+[1971,"Microprocessador",0,"Um computador inteiro dentro de um único chip."],
+[1973,"Celular",0,"A primeira ligação feita de um telefone móvel portátil."],
+[1981,"Computador pessoal",0,"O computador chega às mesas de escritórios e casas."],
+[1983,"Internet",2,"A adoção do protocolo TCP/IP cria a rede das redes."],
+[1990,"Telescópio Hubble",0,"Um telescópio em órbita revela o universo profundo."],
+[1991,"World Wide Web",0,"Tim Berners-Lee cria a web: páginas e links abertos a qualquer pessoa."],
+[1996,"Clonagem",0,"A ovelha Dolly é o primeiro mamífero clonado a partir de uma célula adulta."],
+[1997,"Robô em Marte",0,"O robô Sojourner explora a superfície marciana."],
+[1998,"Buscadores na web",0,"Encontrar qualquer informação em segundos vira rotina."],
+[2000,"Estação Espacial Internacional",0,"Começa a presença humana contínua no espaço."],
+[2003,"Genoma humano",0,"O código genético humano é sequenciado por completo."],
+[2004,"Redes sociais",0,"Bilhões de pessoas passam a se conectar e publicar online."],
+[2006,"Computação em nuvem",0,"Servidores e armazenamento sob demanda pela internet."],
+[2007,"Smartphone",0,"Internet, câmera e aplicativos no bolso."],
+[2009,"Blockchain",0,"O Bitcoin estreia os registros digitais descentralizados."],
+[2011,"4ª Revolução Industrial",1,"Indústria 4.0: sensores, dados, conectividade e automação inteligente."],
+[2012,"CRISPR e deep learning",0,"Edição precisa de genes e redes neurais que aprendem com dados."],
+[2015,"Foguetes reutilizáveis",0,"Foguetes que pousam e voam de novo barateiam o acesso ao espaço."],
+[2016,"Ondas gravitacionais",0,"A detecção confirma uma previsão feita por Einstein cem anos antes."],
+[2017,"Transformers",0,"A arquitetura de IA que deu origem aos grandes modelos de linguagem."],
+[2019,"Computação quântica",0,"Um processador quântico supera supercomputadores numa tarefa específica."],
+[2020,"Vacinas de mRNA",0,"Vacinas contra a covid-19 desenvolvidas em menos de um ano."],
+[2020.5,"AlphaFold",0,"Uma IA prevê a estrutura 3D das proteínas, um desafio de 50 anos."],
+[2021,"Telescópio James Webb",0,"O maior telescópio espacial já lançado observa as primeiras galáxias."],
+[2022,"IA generativa",2,"IAs que escrevem, conversam e criam imagens chegam a milhões de pessoas."],
+[2024,"Agentes de IA",0,"IAs começam a executar tarefas por conta própria, não só a responder."]
+];
+const N=M.length,C=100,Y0=-10000,Y1=2026,Z0=1700,GAP=24;
+const PRE_T=[1.5,4,6,7.6,8.9,10],MAIN=11,D=70,END=MAIN+D,TOTAL=END+8;
+const u=y=>Math.log(NOW-y+C),U0=u(Y0),U1=u(2025);
+const prog=y=>(U0-u(y))/(U0-U1),timeOf=y=>MAIN+prog(y)*D,yearAt=p=>NOW+C-Math.exp(U0-p*(U0-U1));
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,k)=>a+(b-a)*k;
+const P=M.map((m,i)=>({yr:m[0],n:m[1],r:m[2],d:m[3],pre:m[0]<Y0,i,X:0,Y:0}));
+let pk=0;P.forEach(p=>p.t=p.pre?PRE_T[pk++]:timeOf(p.yr));
+const IZ=P.findIndex(p=>p.yr>=Z0);
+P.forEach(p=>{const r=rnd(p.i+1),n=p.r?40:16;p.sp=[];for(let k=0;k<n;k++){const an=r()*Math.PI*2,s=(p.r?240:130)*(.4+r());p.sp.push([Math.cos(an)*s,Math.sin(an)*s,.5+r()*.8]);}});
+function rnd(seed){let s=seed*9301+49297;return()=>((s=(s*9301+49297)%233280)/233280);}
+const cv=document.getElementById('c'),g=cv.getContext('2d');
+let W,H,L,R,T,B,mob,PW,LX,ZW,FS;
+function layout(){mob=cv.parentElement.clientWidth<700;
+if(mob){W=1080;H=1350;L=70;R=760;T=330;B=1130;FS=1.35;}else{W=1920;H=1080;L=150;R=1500;T=250;B=880;FS=1;}
+PW=Math.round((R-L)*.185);LX=L+PW+GAP;ZW=Math.round((R-L)*.13);cv.width=W;cv.height=H;}
+layout();addEventListener('resize',layout);
+const pxF=y=>y<Y0?L+(Math.log(3400000)-Math.log(-y))/(Math.log(3400000)-Math.log(-Y0))*PW:LX+(y-Y0)/(Y1-Y0)*(R-LX);
+const pxZ=y=>{const zx=L+ZW+GAP;return y<Z0?L+(pxF(y)-L)/(pxF(Z0)-L)*ZW:zx+(y-Z0)/(Y1-Z0)*(R-zx);};
+const pyF=i=>B-(i+1)/N*(B-T);
+const pyZ=i=>{const zh=(B-T)*.16;return i<IZ?B-(i+1)/IZ*zh:B-zh-(i-IZ+1)/(N-IZ)*(B-T-zh);};
+let z=0,zT=0;
+const px=y=>lerp(pxF(y),pxZ(y),z),py=i=>lerp(pyF(i),pyZ(i),z);
+const TF=()=>mob?[[-10000,'10 mil a.C.'],[-5000,'5 mil a.C.'],[0,'0'],[2026,'2026']]:[[-1e6,'1 milhão'],[-1e5,'100 mil'],[-10000,'10 mil a.C.'],[-8000,'8 mil a.C.'],[-6000,'6 mil a.C.'],[-4000,'4 mil a.C.'],[-2000,'2 mil a.C.'],[0,'0'],[2026,'2026']];
+const TZ=()=>mob?[[1750,'1750'],[1850,'1850'],[1950,'1950'],[2026,'2026']]:[[1750,'1750'],[1800,'1800'],[1850,'1850'],[1900,'1900'],[1950,'1950'],[2000,'2000'],[2026,'2026']];
+function fmtYear(y){const ago=NOW-y;if(ago>=1e6)return'há '+(ago/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' milhões de anos';if(ago>=12000)return'há '+Math.round(ago/1000).toLocaleString('pt-BR')+' mil anos';if(y<0)return Math.round(-y).toLocaleString('pt-BR')+' a.C.';return Math.max(1,Math.floor(y))+' d.C.';}
+const fmtShort=y=>y<Y0?fmtYear(y):y<0?Math.round(-y).toLocaleString('pt-BR')+' a.C.':String(Math.floor(y));
+function yearOfT(t){if(t<MAIN){const k=clamp((t-PRE_T[0])/(MAIN-PRE_T[0]),0,1);return NOW-Math.exp(Math.log(3300000)+k*(Math.log(12026)-Math.log(3300000)));}return yearAt(clamp((t-MAIN)/D,0,1));}
+function text(s,x,y,font,color,align,alpha){g.globalAlpha=clamp(alpha,0,1);g.font=font;g.fillStyle=color;g.textAlign=align||'left';g.fillText(s,x,y);g.globalAlpha=1;}
+function lab(n,yr,x,y,sz,col,al,a){const ys=fmtShort(yr);g.font='500 '+sz+'px Archivo';const nw=g.measureText(n).width,ysz=Math.round(sz*.8);g.font='400 '+ysz+'px Archivo';const yw=g.measureText(ys).width,gp=sz*.45,w=nw+gp+yw;const x0=al==='left'?x:al==='right'?x-w:x-w/2;text(n,x0,y,'500 '+sz+'px Archivo',col,'left',a);text(ys,x0+nw+gp,y,'400 '+ysz+'px Archivo','#8A90A0','left',a);}
+const colOf=p=>p.r===1?'#FFD27A':'#E9E3D3';
+let ac,master,dg,lp,tg,tos,soundOn=true;
+function noiseBuf(){const b=ac.createBuffer(1,ac.sampleRate*5,ac.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<d.length;i++){last=(last+.02*(Math.random()*2-1))/1.02;d[i]=last*3.5;}return b;}
+function boom(t,x,big){
+const nb=boom.nb,pan=ac.createStereoPanner();pan.pan.value=(x-W/2)/W*.8;pan.connect(master);
+const s=ac.createBufferSource();s.buffer=nb;s.playbackRate.value=.9+Math.random()*.2;
+const f=ac.createBiquadFilter();f.type='lowpass';f.Q.value=.5;f.frequency.setValueAtTime(big?900:650,t);f.frequency.exponentialRampToValueAtTime(big?45:60,t+(big?3.2:1.6));
+const f2=ac.createBiquadFilter();f2.type='lowpass';f2.Q.value=.5;f2.frequency.value=big?1200:900;
+const ge=ac.createGain(),dur=big?4:2,lv=big?1.3:.9;ge.gain.setValueAtTime(0,t);ge.gain.linearRampToValueAtTime(lv,t+.012);ge.gain.setTargetAtTime(0,t+.05,dur/5);
+s.connect(f);f.connect(f2);f2.connect(ge);ge.connect(pan);s.start(t);s.stop(t+dur+.2);
+[[big?60:72,big?20:28,big?2.4:1.1,big?1.2:.85],[big?38:45,big?18:24,big?3:1.4,big?.9:.5]].forEach(([a,b,d,v])=>{const o=ac.createOscillator(),og=ac.createGain();o.frequency.setValueAtTime(a,t);o.frequency.exponentialRampToValueAtTime(b,t+d*.7);og.gain.setValueAtTime(0,t);og.gain.linearRampToValueAtTime(v,t+.015);og.gain.setTargetAtTime(0,t+.04,d/4);o.connect(og);og.connect(pan);o.start(t);o.stop(t+d+.5);});
+}
+function beat(t,v){[0,.22].forEach((d,k)=>{const o=ac.createOscillator(),gg=ac.createGain();o.frequency.setValueAtTime(62,t+d);o.frequency.exponentialRampToValueAtTime(34,t+d+.18);gg.gain.setValueAtTime(0,t+d);gg.gain.linearRampToValueAtTime(v*(k?.6:1),t+d+.01);gg.gain.exponentialRampToValueAtTime(.001,t+d+.35);o.connect(gg);gg.connect(master);o.start(t+d);o.stop(t+d+.4);});}
+function ensureAudio(){if(ac){if(ac.state==='suspended')ac.resume();return;}
+ac=new (window.AudioContext||window.webkitAudioContext)();
+const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=6;comp.connect(ac.destination);
+master=ac.createGain();master.gain.value=soundOn?.8:0;master.connect(comp);boom.nb=noiseBuf();
+dg=ac.createGain();dg.gain.value=0;lp=ac.createBiquadFilter();lp.type='lowpass';lp.Q.value=2;lp.frequency.value=110;lp.connect(dg);dg.connect(master);
+[41.2,41.7,61.8].forEach(f=>{const o=ac.createOscillator();o.type='sawtooth';o.frequency.value=f;o.connect(lp);o.start();});
+tg=ac.createGain();tg.gain.value=0;tg.connect(master);
+tos=[220,233].map(f=>{const o=ac.createOscillator();o.type='triangle';o.frequency.value=f;o.connect(tg);o.start();return o;});}
+let t=0,prevT=0,playing=false,scrubbing=false,speed=1,nextBeat=2,sel=-1,hover=-1,last=performance.now();
+function audioTick(){if(!ac)return;const now=ac.currentTime,pr=clamp((t-MAIN)/D,0,1),on=playing&&!scrubbing&&t<END+1;
+dg.gain.setTargetAtTime(on?.16+.14*pr:0,now,.25);lp.frequency.setTargetAtTime(110*Math.pow(1200/110,pr),now,.3);
+tg.gain.setTargetAtTime(on&&pr>.4?.05*(pr-.4)/.6:0,now,.3);tos.forEach((o,j)=>o.frequency.setTargetAtTime((j?233:220)*Math.pow(2,pr),now,.3));
+if(!playing||scrubbing)return;
+let c=0;P.forEach(p=>{if(prevT<p.t&&p.t<=t&&c<4){boom(now,p.X,p.r>0);c++;}});
+if(prevT<END+.85&&END+.85<=t)boom(now,W/2,true);
+if(t>=nextBeat){if(t<END)beat(now,.35+.45*pr);nextBeat=t+(1.7-1.25*Math.pow(pr,1.3));}}
+function draw(){
+const done=P.filter(p=>p.t<=t);P.forEach(p=>{p.X=px(p.yr);p.Y=py(p.i);});
+let shake=0;if(playing&&!matchMedia('(prefers-reduced-motion: reduce)').matches)done.forEach(p=>{const a=t-p.t;if(p.r&&a<.6)shake=Math.max(shake,(1-a/.6)*(p.r===1?14:9));});
+g.setTransform(1,0,0,1,0,0);g.fillStyle='#06080F';g.fillRect(0,0,W,H);
+if(shake)g.translate((Math.random()-.5)*shake,(Math.random()-.5)*shake);
+const zw=lerp(PW,ZW,z);g.fillStyle='rgba(94,102,120,.06)';g.fillRect(L,T-30,zw+GAP/2,B-T+30);
+const zl=z<.5?'pré-história':'antes de 1700';text(zl,L+zw/2,T-2,'400 '+Math.round(20*FS)+'px Archivo','#6B7285','center',Math.abs(1-2*z));
+const b1=L+zw+4,b2=L+zw+GAP-4;g.lineWidth=1;g.strokeStyle='rgba(94,102,120,.45)';g.beginPath();g.moveTo(L,B+.5);g.lineTo(b1,B+.5);g.moveTo(b2,B+.5);g.lineTo(R,B+.5);g.stroke();
+g.lineWidth=1.5;g.beginPath();g.moveTo(b1,B+8);g.lineTo(b1+8,B-7);g.moveTo(b2-8,B+8);g.lineTo(b2,B-7);g.stroke();
+const tk=(list,al)=>list.forEach(([y,l])=>{if(al<=.01)return;const x=px(y);g.strokeStyle='rgba(94,102,120,'+.12*al+')';g.lineWidth=1;g.beginPath();g.moveTo(x+.5,T-30);g.lineTo(x+.5,B);g.stroke();text(l,x,B+44*FS,'400 '+Math.round(22*FS)+'px Archivo','#6B7285','center',al);});
+tk(TF(),1-z);tk(TZ(),z);
+g.lineJoin='round';g.lineCap='round';g.lineWidth=3.5;g.strokeStyle='#E9E3D3';g.shadowColor='rgba(255,210,122,.55)';g.shadowBlur=18;
+let tip=P[0];
+if(t>=P[0].t){g.beginPath();g.moveTo(P[0].X,P[0].Y);let prev=P[0];
+for(let i=1;i<N;i++){const p=P[i];if(p.t<=t){g.lineTo(p.X,p.Y);tip=p;prev=p;}else{const k=clamp((t-prev.t)/(p.t-prev.t),0,1);tip={X:prev.X+(p.X-prev.X)*k,Y:prev.Y+(p.Y-prev.Y)*k};g.lineTo(tip.X,tip.Y);break;}}
+g.stroke();}
+g.shadowBlur=0;
+done.forEach(p=>{const hv=p.i===hover||p.i===sel;g.fillStyle=colOf(p);g.beginPath();g.arc(p.X,p.Y,(p.r?6:3.5)*(hv?1.6:1)*FS,0,7);g.fill();});
+if(sel>=0&&P[sel].t<=t){const p=P[sel];g.strokeStyle='#FFD27A';g.lineWidth=2;g.beginPath();g.arc(p.X,p.Y,16*FS,0,7);g.stroke();}
+if(t>1&&t<END+1){g.fillStyle='#FFD27A';g.shadowColor='#FF8A3D';g.shadowBlur=30;g.beginPath();g.arc(tip.X,tip.Y,5.5*FS,0,7);g.fill();g.shadowBlur=0;}
+const out=t>END+1.6?Math.max(0,1-(t-END-1.6)):1,back=t>END+5.5?Math.min(1,(t-END-5.5)/1.5):0,la=Math.max(out,back);
+const SZ=Math.round((mob?30:26)),sides={L:[],R:[]};
+done.forEach(p=>{if(!p.r||p.pre)return;const a=Math.min(1,(t-p.t)*3)*la;
+if(p.yr<1700){let lx=p.x,ly,al,l1,l2;
+if(p.r===1){lx=p.X;ly=p.Y+44*FS;al='center';l1=[p.X,p.Y+8];l2=[p.X,p.Y+20];}
+else if(p.yr<0){lx=p.X;ly=p.Y-26*FS;al='center';l1=[p.X,p.Y-8];l2=[p.X,p.Y-18];}
+else{lx=p.X-12;ly=p.Y-26*FS;al='right';l1=[p.X-5,p.Y-6];l2=[p.X-12,p.Y-18];}
+g.strokeStyle=p.r===1?'rgba(255,210,122,'+.6*a+')':'rgba(233,227,211,'+.5*a+')';g.lineWidth=1.5;g.beginPath();g.moveTo(l1[0],l1[1]);g.lineTo(l2[0],l2[1]);g.stroke();
+lab(p.n,p.yr,lx,ly,SZ,colOf(p),al,a);}
+else sides[(mob||p.r!==1)?'L':'R'].push({p,ly:p.Y+SZ*.35,a});});
+['L','R'].forEach(s=>{let lim=Infinity;const gp=SZ*1.3;sides[s].sort((a,b)=>b.p.Y-a.p.Y).forEach(o=>{if(o.ly>lim-gp)o.ly=lim-gp;lim=o.ly;const d=s==='R'?1:-1,ax=o.p.X+34*d;
+g.strokeStyle=o.p.r===1?'rgba(255,210,122,'+.6*o.a+')':'rgba(233,227,211,'+.5*o.a+')';g.lineWidth=1.5;g.beginPath();g.moveTo(o.p.X+10*d,o.p.Y);g.lineTo(ax-6*d,o.ly-SZ*.35);g.stroke();
+lab(o.p.n,o.p.yr,ax,o.ly,SZ,colOf(o.p),s==='R'?'left':'right',o.a);});});
+done.forEach(p=>{const a=t-p.t,big=p.r>0,life=big?1.8:1;if(a>life)return;const k=a/life,col=p.r===1?'255,210,122':p.r===2?'240,232,215':'255,138,61';
+g.strokeStyle='rgba('+col+','+(1-k)*.9+')';g.lineWidth=big?4:2.5;g.beginPath();g.arc(p.X,p.Y,(big?220:70)*Math.pow(k,.5),0,7);g.stroke();
+g.fillStyle='rgba('+col+','+(1-k)*.5+')';g.beginPath();g.arc(p.X,p.Y,(big?60:22)*(1-k),0,7);g.fill();
+p.sp.forEach(([vx,vy,lf])=>{if(k>lf)return;g.fillStyle='rgba(255,'+(big?220:170)+',120,'+(1-k/lf)+')';g.fillRect(p.X+vx*a,p.Y+vy*a+60*a*a,3,3);});});
+const lb=done.filter(p=>p.r).pop();if(playing&&lb&&t-lb.t<.35){g.fillStyle='rgba(255,230,190,'+(.2*(1-(t-lb.t)/.35))+')';g.fillRect(-50,-50,W+100,H+100);}
+g.setTransform(1,0,0,1,0,0);
+if(t>=PRE_T[0]-1){const fa=Math.min(1,t-PRE_T[0]+1)*la,yr=fmtYear(yearOfT(t)),cnt=String(done.length),wd=done.length===1?'descoberta':'descobertas';
+if(mob){text(yr,L,130,'400 90px "Instrument Serif"','#E9E3D3','left',fa);text(cnt,L,240,'400 72px "Instrument Serif"','#E9E3D3','left',fa);g.font='400 72px "Instrument Serif"';text(wd,L+g.measureText(cnt).width+16,240,'400 30px Archivo','#6B7285','left',fa);}
+else{text(yr,L,170,'400 104px "Instrument Serif"','#E9E3D3','left',fa);text(cnt,W-150,160,'400 104px "Instrument Serif"','#E9E3D3','right',fa);text(wd,W-150,200,'400 22px Archivo','#6B7285','right',fa);}
+const cur=done[done.length-1];if(cur&&t<END+1.6){const a=Math.min(1,(t-cur.t)*6)*(t>END?Math.max(0,1-(t-END)):1);lab(cur.n,cur.yr,L,mob?H-70:H-56,mob?44:40,colOf(cur),'left',a);}}
+if(t<3.5){const a=t<.3?t/.3:t<2?1:Math.max(0,1-(t-2)/1.5);text('Por milhões de anos, quase nada mudou.',W/2,H/2-40,'400 '+(mob?50:64)+'px "Instrument Serif"','#E9E3D3','center',a*.95);}
+if(playing&&t>END+.85&&t<END+1.4){g.fillStyle='rgba(255,240,215,'+(1-(t-END-.85)/.55)+')';g.fillRect(0,0,W,H);}
+if(t>END+1.6&&t<END+7){const a=Math.min(1,(t-END-1.6)/1.2)*Math.min(1,(END+7-t)/1.5);g.fillStyle='rgba(6,8,15,'+Math.min(.82,a)+')';g.fillRect(0,0,W,H);
+text('O ritmo nunca foi tão rápido.',W/2,H/2-30,'400 '+(mob?60:76)+'px "Instrument Serif"','#E9E3D3','center',a);
+const b=clamp((t-END-3.2)/1.2,0,1)*Math.min(1,(END+7-t)/1.5);text('E o próximo salto já começou.',W/2,H/2+50,'400 '+(mob?32:34)+'px Archivo','#FFD27A','center',b);}}
+const $=id=>document.getElementById(id),scrub=$('scrub');scrub.max=TOTAL;
+function setPlaying(v){playing=v;$('ico').setAttribute('d',v?'M6 4h4v16H6zM14 4h4v16h-4z':'M7 4l13 8-13 8z');$('playTxt').textContent=v?'Pausar':(t>=TOTAL?'Assistir de novo':'Reproduzir');$('play').setAttribute('aria-label',$('playTxt').textContent);}
+function seek(v){t=clamp(v,0,TOTAL);prevT=t;nextBeat=t+.5;}
+$('play').onclick=()=>{if(playing){setPlaying(false);return;}ensureAudio();if(t>=TOTAL)seek(0);setPlaying(true);};
+scrub.addEventListener('input',()=>{scrubbing=true;seek(+scrub.value);});
+['change','pointerup','touchend'].forEach(e=>scrub.addEventListener(e,()=>{scrubbing=false;}));
+$('speed').onchange=e=>{speed=+e.target.value;};
+$('snd').onclick=e=>{soundOn=!soundOn;e.currentTarget.setAttribute('aria-pressed',soundOn);e.currentTarget.textContent=soundOn?'Som ligado':'Som desligado';if(soundOn)ensureAudio();if(ac)master.gain.setTargetAtTime(soundOn?.8:0,ac.currentTime,.05);};
+$('zoom').onclick=e=>{zT=zT?0:1;e.currentTarget.setAttribute('aria-pressed',!!zT);e.currentTarget.textContent=zT?'Ver escala completa':'Ampliar últimos 300 anos';};
+const ERAS=[['Pré-história',0],['Agricultura',timeOf(-9500)-.3],['Antiguidade',timeOf(-3600)],['Idade Média',timeOf(500)],['Revolução Industrial',timeOf(1750)],['Século 20',timeOf(1899)],['Era digital',timeOf(1975)],['Hoje',TOTAL]];
+ERAS.forEach(([n,v])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>seek(v);$('eras').appendChild(b);});
+function when(p){const pv=P[p.i-1];let s=fmtShort(p.yr);if(pv){const dy=p.yr-pv.yr;const ds=dy<1?'no mesmo ano de':dy>=1e6?(dy/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' milhões de anos depois de':dy>=1000?Math.round(dy/1000).toLocaleString('pt-BR')+' mil anos depois de':Math.round(dy)+(Math.round(dy)===1?' ano':' anos')+' depois de';s+=', '+ds+' '+pv.n;}return s;}
+function select(i,jump){sel=clamp(i,0,N-1);const p=P[sel];
+if(jump){seek(p.t+.001);setPlaying(false);if(soundOn){ensureAudio();boom(ac.currentTime,px(p.yr),p.r>0);}}
+const kind=p.r===1?'Revolução':p.r===2?'Marco histórico':'Descoberta';
+$('card').innerHTML='<div class="kind">'+kind+' '+(p.i+1)+' de '+N+'</div><h2>'+p.n+'</h2><div class="when">'+when(p)+'</div><p>'+p.d+'</p><div class="nav">'+(sel>0?'<button id="prv">Anterior</button>':'')+(sel<N-1?'<button id="nxt">Próxima</button>':'')+'</div>';
+if($('prv'))$('prv').onclick=()=>select(sel-1,true);if($('nxt'))$('nxt').onclick=()=>select(sel+1,true);}
+function cpt(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)/r.width*W,(e.clientY-r.top)/r.height*H];}
+function nearest(x,y){let best=-1,bd=(mob?70:30)**2;P.forEach(p=>{if(p.t>t)return;const d=(p.X-x)**2+(p.Y-y)**2;if(d<bd){bd=d;best=p.i;}});return best;}
+cv.addEventListener('click',e=>{const[x,y]=cpt(e),i=nearest(x,y);if(i>=0)select(i,false);});
+cv.addEventListener('mousemove',e=>{const[x,y]=cpt(e);hover=nearest(x,y);cv.style.cursor=hover>=0?'pointer':'default';});
+cv.addEventListener('mouseleave',()=>{hover=-1;});
+document.addEventListener('keydown',e=>{const tg2=e.target.tagName;
+if(e.key===' '&&!['BUTTON','SELECT','INPUT','A'].includes(tg2)){e.preventDefault();$('play').click();}
+else if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&!['SELECT','INPUT'].includes(tg2)){e.preventDefault();const base=sel>=0?sel:Math.max(0,P.filter(p=>p.t<=t).length-1);select(base+(e.key==='ArrowRight'?1:-1),true);}});
+function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
+if(playing&&!scrubbing){t+=dt*speed;if(t>=TOTAL){t=TOTAL;setPlaying(false);}}
+z+=(zT-z)*Math.min(1,dt*4);if(Math.abs(zT-z)<.002)z=zT;
+audioTick();draw();
+if(!scrubbing)scrub.value=t;$('yr').textContent=t<PRE_T[0]?'há 3,3 milhões de anos':fmtYear(yearOfT(t));
+prevT=t;requestAnimationFrame(frame);}
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(frame));
+</script>
+</body>
+</html>
