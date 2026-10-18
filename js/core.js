@@ -7,7 +7,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v)),lerp=(a,b,k)=>a+(b-a)*k;
 function rnd(seed){let s=seed*9301+49297;return()=>((s=(s*9301+49297)%233280)/233280);}
 // Pontos da linha a partir de M. preT: instantes da pré-história; timeOf: ano -> segundo da animação.
 function makePoints(preT,timeOf){
-const P=M.map((m,i)=>({yr:m[0],n:m[1],r:m[2]||0,d:m[3]||'',pre:m[0]<Y0,i,X:0,Y:0,t:0}));
+const P=M.map((m,i)=>({yr:m[0],n:m[1],r:m[2]||0,d:m[3]||'',wiki:m[4]||'',img:m[5]||'',pre:m[0]<Y0,i,X:0,Y:0,t:0}));
 const np=P.filter(p=>p.pre).length;if(np!==preT.length)console.warn('PRE_T precisa de '+np+' tempos e tem '+preT.length);
 retime(P,preT,timeOf);
 P.forEach(p=>{const r=rnd(p.i+1),n=p.r?40:16;p.sp=[];for(let k=0;k<n;k++){const an=r()*Math.PI*2,s=(p.r?240:130)*(.4+r());p.sp.push([Math.cos(an)*s,Math.sin(an)*s,.5+r()*.8]);}});

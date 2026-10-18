@@ -25,7 +25,7 @@ HTML, CSS e JavaScript puro. Desenho todo em `<canvas>` 2D. Áudio todo sintetiz
 
 ## Dados
 
-O array `M` em `js/data.js` guarda os marcos em ordem cronológica, cada item `[ano, nome, tipo, descrição]`. As duas páginas usam a mesma lista.
+O array `M` em `js/data.js` guarda os marcos em ordem cronológica, cada item `[ano, nome, tipo, descrição, artigo, imagem]`. As duas páginas usam a mesma lista. `artigo` é a URL do artigo na Wikipédia (pt, ou en quando o pt não tem imagem) e `imagem` é a miniatura de 330px do Wikimedia Commons obtida pela API REST de resumo (`/api/rest_v1/page/summary/`). Os endereços ficam gravados nos dados de propósito: a página não chama a API da Wikipédia (que limita requisições), só carrega as imagens. Na página, `imgAt` troca o `330px-` por 500px e, se o Wikimedia recusar o tamanho, volta para a miniatura original.
 
 O ano é negativo para a.C. Anos fracionários (por exemplo `1969.5`, `2020.5`) servem só para ordenar dois marcos do mesmo ano; na exibição o ano é arredondado para baixo.
 
@@ -78,7 +78,13 @@ Só os itens de tipo 1 e 2 ganham rótulo fixo na linha, sempre com o ano em cin
 
 A legenda grande embaixo mostra a descoberta mais recente com o ano.
 
+## Cartão e imagens (interativo)
+
+O cartão à direita acompanha a animação e mostra sempre a descoberta mais recente (`sel<0`). Quando a pessoa clica num ponto ou usa as setas, `sel` passa a valer o índice escolhido e o cartão fica fixo nele até o próximo play. Abaixo do cartão ficam a imagem da descoberta, com crédito para o Wikimedia Commons e link para o artigo, e quatro miniaturas das descobertas anteriores, que podem ser clicadas. As próximas três imagens são pré-carregadas.
+
 ## Layout responsivo (interativo)
+
+Em telas largas (`min-width:1100px` e `min-height:600px`) a página cabe numa tela só: coluna da esquerda com gráfico, controles e épocas, e coluna da direita com cartão, imagem, miniaturas e rodapé. `fitCanvas()` calcula o tamanho do canvas para caber na coluna junto com os controles, alinhado ao topo do cartão. Em telas menores tudo empilha e a página rola. Há um botão central "Começar" sobre o gráfico no início e no fim, e tela cheia pelo botão ou pela tecla F.
 
 `layout()` escolhe entre dois tamanhos lógicos de canvas: 1920×1080 no desktop e 1080×1350 (mais vertical) quando o contêiner tem menos de 700px, com textos maiores (`FS`) e menos marcações no eixo. O canvas é redesenhado a cada quadro, então todas as posições são recalculadas.
 

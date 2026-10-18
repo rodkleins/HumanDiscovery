@@ -42,20 +42,36 @@ button:focus-visible,select:focus-visible,input:focus-visible,canvas:focus-visib
 .card .when{color:var(--muted);font-size:15px}
 .card p{margin:8px 0 0;max-width:62ch}
 .card .nav{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.media{margin:16px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.media .ph{position:relative;height:240px;background:#0A0D16}
+.media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s}
+.media img.on{opacity:1}
+.media[hidden]{display:none}
+.media .alt{position:absolute;inset:0;display:grid;place-items:center;font:400 44px "Instrument Serif",Georgia,serif;color:var(--line)}
+.media figcaption{font-size:12px;color:var(--dim);padding:8px 14px;display:flex;justify-content:space-between;gap:12px}
+.media figcaption:empty{display:none}
+.media a{color:var(--muted)}
+.thumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.thumbs button{display:block;padding:0;min-height:0;border-radius:10px;overflow:hidden;background:#0A0D16;text-align:left;font:400 11px/1.25 Archivo,sans-serif;color:var(--muted)}
+.thumbs img{display:block;width:100%;aspect-ratio:1;object-fit:cover}
+.thumbs span{display:block;padding:5px 6px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 footer{color:var(--dim);font-size:13px;margin-top:28px;max-width:70ch}
 svg{width:18px;height:18px;flex:none}
 /* Telas largas: tudo cabe numa tela, sem rolagem. O gráfico fica em 16:9 ajustado à altura e o cartão vai para a direita. */
 @media (min-width:1100px) and (min-height:600px){
-main{max-width:1680px;height:100vh;height:100dvh;padding:20px 28px;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,24vw,380px);grid-template-rows:auto minmax(0,1fr) auto auto;gap:14px 24px}
+main{max-width:1680px;height:100vh;height:100dvh;padding:20px 28px;display:grid;grid-template-columns:minmax(0,1fr) clamp(300px,24vw,380px);grid-template-rows:auto minmax(0,1fr);gap:14px 24px}
 header{grid-column:1/-1;display:flex;align-items:baseline;gap:8px 28px;flex-wrap:wrap}
 h1{font-size:clamp(30px,2.8vw,44px);margin:0;max-width:none}
 .lede{margin:0;font-size:15px}
-.stage{grid-column:1;grid-row:2;min-height:0}
-canvas{width:auto;max-width:100%;max-height:100%}
-.controls,.eras{grid-column:1;margin:0}
-aside{grid-column:2;grid-row:2/5;display:flex;flex-direction:column;gap:16px;min-height:0;overflow:auto}
-.card{margin:0}
-footer{margin:0}
+.left{grid-column:1;grid-row:2;display:flex;flex-direction:column;gap:14px;min-height:0}
+.stage{flex:none;justify-content:flex-start}
+.controls,.eras{margin:0}
+aside{grid-column:2;grid-row:2;display:flex;flex-direction:column;gap:14px;min-height:0;overflow:auto}
+.card{margin:0;flex:none}
+.media{margin:0;flex:1 1 auto;min-height:150px}
+.media .ph{height:auto;flex:1}
+.thumbs{margin:0;flex:none}
+footer{margin:0;flex:none}
 }
 </style>
 </head>
@@ -65,9 +81,10 @@ footer{margin:0}
 <h1>A aceleração das descobertas humanas</h1>
 <p class="lede">Quase 100 marcos, da primeira ferramenta de pedra à inteligência artificial.</p>
 </header>
+<div class="left" id="left">
 <div class="stage"><canvas id="c" tabindex="0" aria-label="Gráfico animado do número acumulado de descobertas humanas ao longo do tempo. A linha fica quase plana por milênios e sobe na vertical nos últimos dois séculos."></canvas>
 <button id="start" class="start"><span class="disc"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg></span><span id="startTxt">Começar</span></button></div>
-<div class="controls">
+<div class="controls" id="ctrl">
 <button id="play" class="primary" aria-label="Reproduzir"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="ico" d="M7 4l13 8-13 8z"/></svg><span id="playTxt">Reproduzir</span></button>
 <div class="scrub"><input id="scrub" type="range" min="0" max="100" step="0.01" value="0" aria-label="Linha do tempo"><span class="yr" id="yr" aria-live="off">há 3,3 milhões de anos</span></div>
 <select id="speed" aria-label="Velocidade"><option value="0.5">0,5x</option><option value="1" selected>1x</option><option value="2">2x</option></select>
@@ -76,8 +93,11 @@ footer{margin:0}
 <button id="fs" class="icon" aria-label="Tela cheia" title="Tela cheia (F)" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path id="fsIco" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
 </div>
 <div class="eras" id="eras" aria-label="Ir para uma época"></div>
+</div>
 <aside>
 <section class="card" id="card" aria-live="polite"><div class="kind">Explore</div><h2>Clique em um ponto da linha</h2><p>Cada ponto é uma descoberta. Dê o play, arraste a linha do tempo ou use as setas do teclado para ir de uma à outra. Espaço pausa e F liga a tela cheia.</p></section>
+<figure class="media" id="media" hidden><div class="ph"><div class="alt" id="alt"></div><img id="img" alt=""></div><figcaption id="cap"></figcaption></figure>
+<div class="thumbs" id="thumbs" aria-label="Descobertas anteriores"></div>
 <footer>As datas mais antigas são aproximadas e a seleção de marcos é uma curadoria, não uma lista completa. A ideia é mostrar o ritmo das descobertas, não ranqueá-las.</footer>
 </aside>
 </main>
@@ -90,8 +110,13 @@ const PRE_T=[1.5,4,6,7.6,8.9,10],MAIN=11,D=70,END=MAIN+D,TOTAL=END+8;
 const timeOf=y=>MAIN+prog(y)*D,P=makePoints(PRE_T,timeOf),N=P.length;
 const $=id=>document.getElementById(id),cv=$('c'),g=cv.getContext('2d'),RM=matchMedia('(prefers-reduced-motion: reduce)');
 let G,SC;
-function layout(){G=geometry(cv.parentElement.clientWidth<700);SC=scales(G,P);cv.width=G.W;cv.height=G.H;}
-layout();addEventListener('resize',layout);
+// Em telas largas o canvas é dimensionado para caber na coluna junto com os controles, alinhado ao topo do cartão.
+const WIDE=matchMedia('(min-width:1100px) and (min-height:600px)');
+function fitCanvas(){if(!WIDE.matches){cv.style.width=cv.style.height='';return;}
+const col=$('left'),free=col.clientHeight-$('ctrl').offsetHeight-$('eras').offsetHeight-28,w=Math.max(240,Math.min(col.clientWidth,free*G.W/G.H));
+cv.style.width=w+'px';cv.style.height=w*G.H/G.W+'px';}
+function layout(){G=geometry(cv.parentElement.clientWidth<700);SC=scales(G,P);if(cv.width!==G.W){cv.width=G.W;cv.height=G.H;}fitCanvas();}
+layout();addEventListener('resize',layout);new ResizeObserver(layout).observe($('left'));
 let z=0,zT=0;
 const panOf=x=>(x-G.W/2)/G.W*.8;
 let au,dr,soundOn=true;
@@ -128,7 +153,7 @@ if(t>END+1.6&&t<END+7){const fade=Math.min(1,(END+7-t)/1.5);drawOutro(g,G,Math.m
 const scrub=$('scrub');scrub.max=TOTAL;
 function setPlaying(v){playing=v;$('start').hidden=v||(t>0&&t<TOTAL);$('startTxt').textContent=t>=TOTAL?'Assistir de novo':'Começar';$('ico').setAttribute('d',v?'M6 4h4v16H6zM14 4h4v16h-4z':'M7 4l13 8-13 8z');$('playTxt').textContent=v?'Pausar':(t>=TOTAL?'Assistir de novo':'Reproduzir');$('play').setAttribute('aria-label',$('playTxt').textContent);}
 function seek(v){t=clamp(v,0,TOTAL);prevT=t;nextBeat=t+.5;}
-$('play').onclick=()=>{if(playing){setPlaying(false);return;}ensureAudio();if(t>=TOTAL)seek(0);setPlaying(true);};
+$('play').onclick=()=>{if(playing){setPlaying(false);return;}sel=-1;ensureAudio();if(t>=TOTAL)seek(0);setPlaying(true);};
 $('start').onclick=()=>{$('play').click();cv.focus({preventScroll:true});};
 const root=document.documentElement,fsEl=()=>document.fullscreenElement||document.webkitFullscreenElement;
 function toggleFs(){if(fsEl())(document.exitFullscreen||document.webkitExitFullscreen).call(document);else(root.requestFullscreen||root.webkitRequestFullscreen).call(root);}
@@ -142,11 +167,29 @@ $('zoom').onclick=e=>{zT=zT?0:1;e.currentTarget.setAttribute('aria-pressed',!!zT
 const ERAS=[['Pré-história',0],['Agricultura',timeOf(-9500)-.3],['Antiguidade',timeOf(-3600)],['Idade Média',timeOf(500)],['Revolução Industrial',timeOf(1750)],['Século 20',timeOf(1899)],['Era digital',timeOf(1975)],['Hoje',TOTAL]];
 ERAS.forEach(([n,v])=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>seek(v);$('eras').appendChild(b);});
 function when(p){const pv=P[p.i-1];let s=fmtShort(p.yr);if(pv){const dy=p.yr-pv.yr;const ds=dy<1?'no mesmo ano de':dy>=1e6?(dy/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' milhões de anos depois de':dy>=1000?Math.round(dy/1000).toLocaleString('pt-BR')+' mil anos depois de':Math.round(dy)+(Math.round(dy)===1?' ano':' anos')+' depois de';s+=', '+ds+' '+pv.n;}return s;}
+// sel>=0: ponto escolhido pela pessoa, o cartão fica nele. sel<0: o cartão acompanha a descoberta mais recente.
 function select(i,jump){sel=clamp(i,0,N-1);const p=P[sel];
 if(jump){seek(p.t+.001);setPlaying(false);if(soundOn){ensureAudio();boom(au,au.ac.currentTime,panOf(SC.px(p.yr,z)),p.r>0);}}
-const kind=p.r===1?'Revolução':p.r===2?'Marco histórico':'Descoberta';
-$('card').innerHTML='<div class="kind">'+kind+' '+(p.i+1)+' de '+N+'</div><h2>'+p.n+'</h2><div class="when">'+when(p)+'</div><p>'+p.d+'</p><div class="nav">'+(sel>0?'<button id="prv">Anterior</button>':'')+(sel<N-1?'<button id="nxt">Próxima</button>':'')+'</div>';
-if($('prv'))$('prv').onclick=()=>select(sel-1,true);if($('nxt'))$('nxt').onclick=()=>select(sel+1,true);}
+showCard(sel,true);}
+const INTRO_CARD=$('card').innerHTML,IMG_W=500;
+let shown=-1;
+// Imagens vêm do Wikimedia; a miniatura gravada nos dados é redimensionada para a largura w.
+const imgAt=(p,w)=>p.img.replace(/\/((?:lang\w+-)?)\d+px-([^/]+)$/,'/$1'+w+'px-$2');
+// Se a imagem original for menor que w, o Wikimedia recusa o tamanho; cai para a miniatura gravada.
+const fallback=(im,p)=>{im.onerror=()=>{im.onerror=null;im.src=p.img;};};
+const fileOf=p=>{const m=p.img.match(/\/thumb\/[^/]+\/[^/]+\/([^/]+)\//);return m?'https://pt.wikipedia.org/wiki/Ficheiro:'+m[1]:p.wiki;};
+function showCard(i,force){if(i===shown&&!force)return;shown=i;
+$('card').setAttribute('aria-live',sel>=0?'polite':'off');
+if(i<0){$('card').innerHTML=INTRO_CARD;$('media').hidden=true;$('thumbs').innerHTML='';return;}
+const p=P[i],kind=p.r===1?'Revolução':p.r===2?'Marco histórico':'Descoberta';
+$('card').innerHTML='<div class="kind">'+kind+' '+(p.i+1)+' de '+N+'</div><h2>'+p.n+'</h2><div class="when">'+when(p)+'</div><p>'+p.d+'</p><div class="nav">'+(i>0?'<button id="prv">Anterior</button>':'')+(i<N-1?'<button id="nxt">Próxima</button>':'')+'</div>';
+if($('prv'))$('prv').onclick=()=>select(i-1,true);if($('nxt'))$('nxt').onclick=()=>select(i+1,true);
+const im=$('img'),src=p.img?imgAt(p,IMG_W):'';$('media').hidden=false;$('alt').textContent=src?'':fmtShort(p.yr);
+if(!src){im.classList.remove('on');im.removeAttribute('src');}else if(im.getAttribute('src')!==src){im.classList.remove('on');im.onload=()=>im.classList.add('on');fallback(im,p);im.src=src;}
+im.alt=p.n;
+$('cap').innerHTML=p.img?'<a href="'+fileOf(p)+'" target="_blank" rel="noopener">Imagem: Wikimedia Commons</a><a href="'+p.wiki+'" target="_blank" rel="noopener">Ler na Wikipédia</a>':'';
+P.slice(i+1,i+4).forEach(q=>{if(q.img)new Image().src=imgAt(q,IMG_W);});
+$('thumbs').innerHTML='';P.slice(0,i).filter(q=>q.img).slice(-4).forEach(q=>{const b=document.createElement('button');b.title=q.n;b.innerHTML='<img loading="lazy" alt="" src="'+imgAt(q,IMG_W)+'"><span>'+q.n+'</span>';fallback(b.firstChild,q);b.onclick=()=>select(q.i,true);$('thumbs').appendChild(b);});}
 function cpt(e){const r=cv.getBoundingClientRect();return[(e.clientX-r.left)/r.width*G.W,(e.clientY-r.top)/r.height*G.H];}
 function nearest(x,y){let best=-1,bd=(G.mob?70:30)**2;P.forEach(p=>{if(p.t>t)return;const d=(p.X-x)**2+(p.Y-y)**2;if(d<bd){bd=d;best=p.i;}});return best;}
 cv.addEventListener('click',e=>{const[x,y]=cpt(e),i=nearest(x,y);if(i>=0)select(i,false);});
@@ -160,6 +203,7 @@ function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
 if(playing&&!scrubbing){t+=dt*speed;if(t>=TOTAL){t=TOTAL;setPlaying(false);}}
 z+=(zT-z)*Math.min(1,dt*4);if(Math.abs(zT-z)<.002)z=zT;
 audioTick();draw();
+if(sel<0){let k=-1;while(k+1<N&&P[k+1].t<=t)k++;showCard(k);}
 if(!scrubbing)scrub.value=t;if(!playing){$('start').hidden=t>0&&t<TOTAL;$('startTxt').textContent=t>=TOTAL?'Assistir de novo':'Começar';}$('yr').textContent=fmtYear(yearOfT(P,t,END));
 prevT=t;requestAnimationFrame(frame);}
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(frame));
