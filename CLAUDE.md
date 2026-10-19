@@ -70,7 +70,7 @@ A explosão (`boom`) combina ruído marrom (gerado em `noiseBuf`, bem mais grave
 
 Na versão vídeo todos os sons são agendados de uma vez no início, sincronizados pelo relógio do `AudioContext`. No interativo, os sons são disparados ao vivo quando o tempo cruza um marco (para funcionar com pausa e arraste), com limite de 4 explosões por quadro.
 
-O navegador exige um clique antes de tocar áudio; por isso tudo começa a partir de um botão.
+O navegador exige um clique antes de tocar áudio; por isso tudo começa a partir de um botão. No iPhone o Web Audio obedece à chave de silencioso; `unlockAudio()` (chamada dentro do clique) define `navigator.audioSession.type='playback'` e, em Safari antigo sem essa API, toca um `<audio>` silencioso em loop, para que o som saia mesmo no modo silencioso.
 
 ## Rótulos
 

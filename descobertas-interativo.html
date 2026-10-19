@@ -131,7 +131,7 @@ layout();addEventListener('resize',layout);new ResizeObserver(()=>layout()).obse
 let z=0,zT=0;
 const panOf=x=>(x-G.W/2)/G.W*.8;
 let au,dr,soundOn=true;
-function ensureAudio(){if(au){if(au.ac.state==='suspended')au.ac.resume();return;}
+function ensureAudio(){if(au){unlockAudio(au.ac);return;}
 au=createSound(soundOn?.8:0);dr=drone(au,au.ac.currentTime);}
 let t=0,prevT=0,playing=false,scrubbing=false,speed=1,nextBeat=2,sel=-1,hover=-1,last=performance.now();
 function audioTick(){if(!au)return;const now=au.ac.currentTime,pr=clamp((t-MAIN)/D,0,1),on=playing&&!scrubbing&&t<END+1;

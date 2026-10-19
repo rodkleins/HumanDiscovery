@@ -4,11 +4,23 @@ function createSound(level){
 const ac=new (window.AudioContext||window.webkitAudioContext)();
 const comp=ac.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=6;comp.connect(ac.destination);
 const master=ac.createGain();master.gain.value=level;master.connect(comp);
+unlockAudio(ac);
 return{ac,comp,master,nb:noiseBuf(ac)};}
+// iPhone: o Web Audio obedece à chave de silencioso, e a página fica muda mesmo com o volume alto.
+// Declarar a sessão como "playback" faz o iOS tratar a página como mídia (Safari 16.4+). Em versões antigas,
+// tocar um <audio> silencioso em loop tem o mesmo efeito. Chamar sempre dentro de um clique.
+let silentEl=null;
+function unlockAudio(ac){
+if(navigator.audioSession){try{navigator.audioSession.type='playback';}catch(e){}}
+else{if(!silentEl){silentEl=document.createElement('audio');silentEl.src=silentWav();silentEl.loop=true;silentEl.setAttribute('playsinline','');}silentEl.play().catch(()=>{});}
+if(ac.state!=='running')ac.resume().catch(()=>{});}
+function silentWav(){const n=800,b=new ArrayBuffer(44+n),v=new DataView(b),w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i));};
+w(0,'RIFF');v.setUint32(4,36+n,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);v.setUint32(24,8000,true);v.setUint32(28,8000,true);v.setUint16(32,1,true);v.setUint16(34,8,true);w(36,'data');v.setUint32(40,n,true);
+for(let i=0;i<n;i++)v.setUint8(44+i,128);return URL.createObjectURL(new Blob([b],{type:'audio/wav'}));}
 function noiseBuf(ac){const b=ac.createBuffer(1,ac.sampleRate*5,ac.sampleRate),d=b.getChannelData(0);let last=0;for(let i=0;i<d.length;i++){last=(last+.02*(Math.random()*2-1))/1.02;d[i]=last*3.5;}return b;}
 // pan: -1 (esquerda) a 1 (direita). big: revoluções e marcos, mais longa e profunda.
 function boom(au,t,pan,big){const{ac}=au;
-const pn=ac.createStereoPanner();pn.pan.value=pan;pn.connect(au.master);
+const pn=ac.createStereoPanner?ac.createStereoPanner():ac.createGain();if(pn.pan)pn.pan.value=pan;pn.connect(au.master);
 const s=ac.createBufferSource();s.buffer=au.nb;s.playbackRate.value=.9+Math.random()*.2;
 const f=ac.createBiquadFilter();f.type='lowpass';f.Q.value=.5;f.frequency.setValueAtTime(big?900:650,t);f.frequency.exponentialRampToValueAtTime(big?45:60,t+(big?3.2:1.6));
 const f2=ac.createBiquadFilter();f2.type='lowpass';f2.Q.value=.5;f2.frequency.value=big?1200:900;
